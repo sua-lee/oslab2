@@ -23,6 +23,8 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+void uthread_init(void(*func)());
+int uthread_count(int n);
 
 // ulib.c
 int stat(char*, struct stat*);

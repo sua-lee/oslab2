@@ -7,6 +7,28 @@
 #include "mmu.h"
 #include "proc.h"
 
+int sys_uthread_init(void)
+{
+  int sched;
+  if (argint(0, &sched) < 0)
+    return -1;
+  myproc()->scheduler = sched;
+  return 0;
+}
+
+int 
+sys_uthread_count(void)
+{
+  int n;
+  if(argint(0, &n) < 0)
+    return -1;
+  struct proc* p;
+  p = myproc();
+  p -> number_thread += n;
+
+  return 0;
+}
+
 int
 sys_fork(void)
 {

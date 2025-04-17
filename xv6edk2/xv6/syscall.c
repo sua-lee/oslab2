@@ -103,6 +103,8 @@ extern int sys_unlink(void);
 extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
+extern int sys_uthread_init(void);
+extern int sys_uthread_count(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -126,6 +128,8 @@ static int (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
+[SYS_uthread_init] sys_uthread_init,
+[SYS_uthread_count] sys_uthread_count,
 };
 
 void
