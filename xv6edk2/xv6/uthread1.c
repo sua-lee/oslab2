@@ -22,27 +22,40 @@ static thread_t all_thread[MAX_THREAD];
 thread_p  current_thread;
 thread_p  next_thread;
 extern void thread_switch(void);
+void thread_schedule(void);
+void uthread_init(void (*func)());    // 커널에 user-level 스케줄러 주소를 등록하는 시스템콜
+
+void thread_exit(void) {
+  current_thread->state = FREE;
+  thread_schedule();
+  exit();  // trap fallback
+}
 
 static void 
 thread_schedule(void)
 {
   thread_p t;
+  int cur_index = current_thread - all_thread;
 
-  /* Find another runnable thread. */
   next_thread = 0;
-  for (t = all_thread; t < all_thread + MAX_THREAD; t++) {
-    if (t->state == RUNNABLE && t != current_thread) {
+  for (int i = 1; i < MAX_THREAD; i++) {
+    int idx = (cur_index + i) % MAX_THREAD;
+    t = &all_thread[idx];
+
+    if (idx == 0)  // main thread 제외
+      continue;
+
+    if (t->state == RUNNABLE) {
       next_thread = t;
       break;
     }
   }
-
-  if (t >= all_thread + MAX_THREAD && current_thread->state == RUNNABLE) {
-    /* The current thread is the only runnable thread; run it. */
+  // 현재 스레드가 유일한 runnable인 경우, 자기 자신 다시 선택
+  if (!next_thread && cur_index != 0 && current_thread->state == RUNNABLE) {
     next_thread = current_thread;
   }
 
-  if (next_thread == 0) {
+  if (!next_thread) {
     printf(2, "thread_schedule: no runnable threads\n");
     exit();
   }
@@ -77,11 +90,16 @@ thread_create(void (*func)())
   for (t = all_thread; t < all_thread + MAX_THREAD; t++) {
     if (t->state == FREE) break;
   }
+
+  if (t >= all_thread + MAX_THREAD) // 사용 가능한 스레드가 없으면 그냥 return
+  return;
+
   t->sp = (int) (t->stack + STACK_SIZE);   // set sp to the top of the stack
   t->sp -= 4;                              // space for return address
   * (int *) (t->sp) = (int)func;           // push return address on stack
   t->sp -= 32;                             // space for registers that thread_switch expects
   t->state = RUNNABLE;
+  uthread_count(1);
 }
 
 static void 
@@ -91,9 +109,11 @@ mythread(void)
   printf(1, "my thread running\n");
   for (i = 0; i < 100; i++) {
     printf(1, "my thread 0x%x\n", (int) current_thread);
+    for (volatile int j = 0; j < 10000000; j++);  // 지연시키기 위해
   }
   printf(1, "my thread: exit\n");
-  current_thread->state = FREE;
+  uthread_count(-1);
+  thread_exit();
 }
 
 
@@ -104,5 +124,5 @@ main(int argc, char *argv[])
   thread_create(mythread);
   thread_create(mythread);
   thread_schedule();
-  return 0;
+  exit();
 }
