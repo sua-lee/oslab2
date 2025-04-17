@@ -57,11 +57,13 @@ trap(struct trapframe *tf)
     }
     lapiceoi();
     //실행 중인 프로세스에 스케줄러가 존재한다면 && number_thread가 2개 이상이라면 
-    if (myproc() && myproc()->state == RUNNING && (tf->cs & 3) == 3 && myproc()->scheduler && myproc()->number_thread) {
-      tf->esp -= 4;
-      *(uint*)tf->esp = tf->eip;
-      tf->eip = myproc()->scheduler;
+    if ((tf->cs & 3) == 0) {  // 커널 모드에서 trap 발생한 경우
+      struct proc* p = myproc();
+      if (p && p->tf && p->state == RUNNING && p->scheduler && p->number_thread >= 2) {
+        p->tf->eip = (uint)p->scheduler;
+      }
     }
+    break;
     break;
   case T_IRQ0 + IRQ_IDE:
     ideintr();
