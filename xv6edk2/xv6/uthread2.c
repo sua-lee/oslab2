@@ -6,7 +6,7 @@
 #define FREE        0x0
 #define RUNNING     0x1
 #define RUNNABLE    0x2
-#define WAIT        0x3 //wait상태 추가
+#define WAIT        0x3
 
 #define STACK_SIZE  8192
 #define MAX_THREAD  10
@@ -21,7 +21,7 @@ struct thread {
   char stack[STACK_SIZE];       /* the thread's stack */
   int        state;             /* FREE, RUNNING, RUNNABLE, WAIT */
 };
-static thread_t all_thread[MAX_THREAD];    
+static thread_t all_thread[MAX_THREAD];
 thread_p  current_thread;
 thread_p  next_thread;
 extern void thread_switch(void);
@@ -33,14 +33,14 @@ thread_schedule(void)
 
   /* Find another runnable thread. */
   next_thread = 0;
-  for (t = all_thread; t < all_thread + MAX_THREAD; t++) { 
-    if (t->state == RUNNABLE && t != current_thread) {  //현재 스레드가 아님, 러너블
+  for (t = all_thread; t < all_thread + MAX_THREAD; t++) {
+    if (t->state == RUNNABLE && t != current_thread) {
       next_thread = t;
       break;
     }
   }
 
-  if (t >= all_thread + MAX_THREAD && current_thread->state == RUNNABLE) {  
+  if (t >= all_thread + MAX_THREAD && current_thread->state == RUNNABLE) {
     /* The current thread is the only runnable thread; run it. */
     next_thread = current_thread;
   }
@@ -84,9 +84,9 @@ thread_create(void (*func)())
   }
   t->sp = (int) (t->stack + STACK_SIZE);   // set sp to the top of the stack
   t->sp -= 4;                              // space for return address
-  
-  t->tid = t - all_thread;                 // 유일한 thread ID
-  t->ptid = current_thread->tid;          // 부모 ID 설정
+  //setting tid and ptid
+  t->tid = t - all_thread;
+  t->ptid = current_thread->tid; 
 
   * (int *) (t->sp) = (int)func;           // push return address on stack
   t->sp -= 32;                             // space for registers that thread_switch expects
@@ -96,23 +96,33 @@ thread_create(void (*func)())
 static void 
 thread_join_all(void)
 {
-  int done;
+  int has_child;
 
   while (1) {
-    done = 1;
+    has_child = 0;
+
     for (int i = 0; i < MAX_THREAD; i++) {
       thread_p t = &all_thread[i];
-      if (t->state != FREE && t->ptid == current_thread->tid) {
-        done = 0; // 아직 살아있는 자식 스레드가 있음
+      // 아직 살아 있는 자식 스레드가 있다면
+      if (t->ptid == current_thread->tid && t->state != FREE) {
+        has_child = 1;
         break;
       }
     }
 
-    if (done)
-      return; // 모든 자식 스레드 종료
-
-    thread_schedule(); // 다른 스레드에게 CPU 양보
+    if (has_child) {
+      // 자식이 살아있다면 현재 스레드를 WAIT으로 바꾸고 스케줄러에게 넘김
+      current_thread->state = WAIT;
+      thread_schedule();
+    } else {
+      // 자식이 모두 종료됨 → 더 이상 WAIT 필요 없음
+      current_thread->state = RUNNABLE;
+      break;
+    }
   }
+
+  // 마지막에 스케줄링 한번 더
+  thread_schedule();
 }
 
 static void 
@@ -139,7 +149,6 @@ mythread(void)
   printf(1, "my thread: exit\n");
   current_thread->state = FREE;
 }
-
 
 int 
 main(int argc, char *argv[]) 
