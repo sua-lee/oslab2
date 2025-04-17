@@ -21,6 +21,12 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
+int 
+uthread_init(uint address) 
+{
+  return 0;
+}
+
 void
 pinit(void)
 {

@@ -7,6 +7,15 @@
 #include "mmu.h"
 #include "proc.h"
 
+int sys_uthread_init(void)
+{
+  int sched;
+  if (argint(0, &sched) < 0)
+    return -1;
+  myproc()->scheduler = sched;
+  return 0;
+}
+
 int
 sys_fork(void)
 {
