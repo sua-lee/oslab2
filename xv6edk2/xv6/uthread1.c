@@ -31,7 +31,7 @@ void thread_exit(void) {
   exit();  // trap fallback
 }
 
-static void 
+void 
 thread_schedule(void)
 {
   thread_p t;
