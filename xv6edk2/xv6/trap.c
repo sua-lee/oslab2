@@ -56,6 +56,12 @@ trap(struct trapframe *tf)
       release(&tickslock);
     }
     lapiceoi();
+    //실행 중인 프로세스에 스케줄러가 존재한다면 && number_thread가 2개 이상이라면 
+    if (myproc() && myproc()->state == RUNNING && (tf->cs & 3) == 3 && myproc()->scheduler && myproc()->number_thread) {
+      tf->esp -= 4;
+      *(uint*)tf->esp = tf->eip;
+      tf->eip = myproc()->scheduler;
+    }
     break;
   case T_IRQ0 + IRQ_IDE:
     ideintr();
