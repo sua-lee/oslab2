@@ -6,7 +6,7 @@
 #define FREE        0x0
 #define RUNNING     0x1
 #define RUNNABLE    0x2
-#define WAIT        0x3
+#define WAIT        0x3 //wait상태 추가
 
 #define STACK_SIZE  8192
 #define MAX_THREAD  10
@@ -21,7 +21,7 @@ struct thread {
   char stack[STACK_SIZE];       /* the thread's stack */
   int        state;             /* FREE, RUNNING, RUNNABLE, WAIT */
 };
-static thread_t all_thread[MAX_THREAD];
+static thread_t all_thread[MAX_THREAD];    
 thread_p  current_thread;
 thread_p  next_thread;
 extern void thread_switch(void);
@@ -33,14 +33,14 @@ thread_schedule(void)
 
   /* Find another runnable thread. */
   next_thread = 0;
-  for (t = all_thread; t < all_thread + MAX_THREAD; t++) {
-    if (t->state == RUNNABLE && t != current_thread) {
+  for (t = all_thread; t < all_thread + MAX_THREAD; t++) { 
+    if (t->state == RUNNABLE && t != current_thread) {  //현재 스레드가 아님, 러너블
       next_thread = t;
       break;
     }
   }
 
-  if (t >= all_thread + MAX_THREAD && current_thread->state == RUNNABLE) {
+  if (t >= all_thread + MAX_THREAD && current_thread->state == RUNNABLE) {  
     /* The current thread is the only runnable thread; run it. */
     next_thread = current_thread;
   }
