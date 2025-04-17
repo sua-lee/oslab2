@@ -84,9 +84,10 @@ thread_create(void (*func)())
   }
   t->sp = (int) (t->stack + STACK_SIZE);   // set sp to the top of the stack
   t->sp -= 4;                              // space for return address
-  /* 
-    set tid and ptid
-  */
+  
+  t->tid = t - all_thread;                 // 유일한 thread ID
+  t->ptid = current_thread->tid;          // 부모 ID 설정
+
   * (int *) (t->sp) = (int)func;           // push return address on stack
   t->sp -= 32;                             // space for registers that thread_switch expects
   t->state = RUNNABLE;
@@ -95,9 +96,23 @@ thread_create(void (*func)())
 static void 
 thread_join_all(void)
 {
-  /*
-    it returns when all child threads have exited.
-  */
+  int done;
+
+  while (1) {
+    done = 1;
+    for (int i = 0; i < MAX_THREAD; i++) {
+      thread_p t = &all_thread[i];
+      if (t->state != FREE && t->ptid == current_thread->tid) {
+        done = 0; // 아직 살아있는 자식 스레드가 있음
+        break;
+      }
+    }
+
+    if (done)
+      return; // 모든 자식 스레드 종료
+
+    thread_schedule(); // 다른 스레드에게 CPU 양보
+  }
 }
 
 static void 
