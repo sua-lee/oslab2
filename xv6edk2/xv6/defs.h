@@ -120,7 +120,7 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
-void            uthread_init(void);
+int             uthread_init(uint address); 
 int             uthread_count(int n);
 
 // swtch.S
