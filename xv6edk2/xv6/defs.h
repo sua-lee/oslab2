@@ -121,6 +121,7 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 void            uthread_init(void);
+int             uthread_count(int n);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

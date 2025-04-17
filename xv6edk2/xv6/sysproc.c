@@ -16,6 +16,19 @@ int sys_uthread_init(void)
   return 0;
 }
 
+int 
+sys_uthread_count(void)
+{
+  int n;
+  if(argint(0, &n) < 0)
+    return -1;
+  struct proc* p;
+  p = myproc();
+  p -> number_thread += n;
+
+  return 0;
+}
+
 int
 sys_fork(void)
 {
